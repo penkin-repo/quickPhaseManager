@@ -1,20 +1,17 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+Quick Phrase Manager
 
-# Run and deploy your AI Studio app
-
-This contains everything you need to run your app locally.
-
-View your app in AI Studio: https://ai.studio/apps/drive/1eSzcpy8JE_pSEnrP5Q5OWqUSzEBL96Ix
+An application to create, manage, and quickly access reusable phrases and text snippets, organized into groups with a global search.
 
 ## Run Locally
 
-**Prerequisites:**  Node.js
-
-
 1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
+   `pnpm install`
+2. Set the `VITE_SUPABASE_URL` and `VITE_SUPABASE_KEY` in [.env.local](.env.local) to your Supabase credentials
 3. Run the app:
-   `npm run dev`
+   `pnpm run dev`
+
+## Deploy
+
+1. Push your changes to GitHub
+2. The GitHub Actions workflow will run automatically and deploy your app to GitHub Pages
+   
