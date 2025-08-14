@@ -3,13 +3,12 @@ import { defineConfig, loadEnv } from 'vite';
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
-    const base = '/QuickPhraseManager/';
     return {
+      base: '/quickPhaseManager/',  // Добавлено здесь
       define: {
         'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
         'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
       },
-      base,
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),
@@ -17,3 +16,6 @@ export default defineConfig(({ mode }) => {
       }
     };
 });
+
+
+
