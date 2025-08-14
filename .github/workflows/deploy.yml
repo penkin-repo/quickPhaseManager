@@ -1,0 +1,74 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main  # или master, если так называется ветка
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Create supabase/client.ts
+        run: |
+          mkdir -p supabase
+          cat > supabase/client.ts << 'EOF'
+          import { type SupabaseClient } from '@supabase/supabase-js';
+          import { createClient } from '@supabase/supabase-js'
+          import type { Database } from '../types/supabase';
+
+          // IMPORTANT: Replace with your actual Supabase URL and Anon Key
+          // You can find these in your Supabase project settings under "API".
+
+          const supabaseUrl = '${{ secrets.VITE_SUPABASE_URL }}';
+          const supabaseAnonKey = '${{ secrets.VITE_SUPABASE_KEY }}';
+
+          let supabase: SupabaseClient<Database> | null = null;
+
+          if (isSupabaseConfigured) {
+            try {
+                supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+            } catch (e) {
+                // This will catch the 'Invalid URL' error at initialization time and log it,
+                // preventing a crash. supabase will remain null.
+                console.error("Error initializing Supabase client. Make sure your URL is valid.", e);
+            }
+          }
+
+          export default supabase
+          EOF
+
+      - name: Build project
+        run: npm run build
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist  # папка с готовым сайтом
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,34 +1,13 @@
 
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { Group, Phrase } from '../types';
-import type { Database } from '../types/supabase';
-
-// --- Supabase Client Setup ---
-// TODO: Replace with your Supabase project URL and anon key
-
-export const SUPABASE_URL : string = 'https://edkeahjwmtdiswhwzjuy.supabase.co';
-export const SUPABASE_ANON_KEY : string = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVka2VhaGp3bXRkaXN3aHd6anV5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ5NDU4MjksImV4cCI6MjA3MDUyMTgyOX0.rUadEAZzCcYKPLPG52RTurHbHhqDIjKH6wBknVyFoHg';
-
-// Check if credentials are placeholders or invalid before initializing
-const isSupabaseConfigured = SUPABASE_URL !== 'YOUR_SUPABASE_URL' && SUPABASE_ANON_KEY !== 'YOUR_SUPABASE_ANON_KEY';
-let supabase: SupabaseClient<Database> | null = null;
-
-if (isSupabaseConfigured) {
-    try {
-        supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY);
-    } catch (e) {
-        // This will catch the 'Invalid URL' error at initialization time and log it,
-        // preventing a crash. supabase will remain null.
-        console.error("Error initializing Supabase client. Make sure your URL is valid.", e);
-    }
-}
+import supabase from '../supabase/client';
 
 // Helper to handle Supabase errors
 const handleSupabaseError = ({ error, customMessage }: { error: any; customMessage: string }) => {
-  if (error) {
-    console.error(customMessage, error);
-    throw new Error(`${customMessage}: ${error.message}`);
-  }
+    if (error) {
+        console.error(customMessage, error);
+        throw new Error(`${customMessage}: ${error.message}`);
+    }
 };
 
 // Helper to ensure client is available for operations that modify data
@@ -61,7 +40,7 @@ export const addGroup = async (name: string): Promise<Group> => {
         .insert([{ name }])
         .select('*, phrases(*)')
         .single();
-    
+
     handleSupabaseError({ error, customMessage: 'Failed to add group' });
     if (!data) {
         throw new Error('Failed to add group: no data returned.');
@@ -91,7 +70,7 @@ export const deleteGroup = async (groupId: string): Promise<{ success: boolean }
         .from('groups')
         .delete()
         .eq('id', groupId);
-    
+
     handleSupabaseError({ error, customMessage: 'Failed to delete group' });
     return { success: true };
 };
@@ -103,7 +82,7 @@ export const addPhrase = async (groupId: string, title: string, text: string): P
         .insert([{ group_id: groupId, title, text }])
         .select()
         .single();
-    
+
     handleSupabaseError({ error, customMessage: 'Failed to add phrase' });
     if (!data) {
         throw new Error('Failed to add phrase: no data returned.');
