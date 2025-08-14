@@ -1,4 +1,6 @@
-const CACHE_NAME = 'quick-phrases-cache-v1';
+const CACHE_NAME = 'quick-phrases-cache-v2';
+const DATA_CACHE_NAME = 'quick-phrases-data-cache-v1';
+
 const urlsToCache = [
   '/',
   '/index.html',
@@ -10,7 +12,7 @@ self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        console.log('Opened cache');
+        console.log('Opened static asset cache');
         return cache.addAll(urlsToCache);
       })
   );
@@ -19,7 +21,7 @@ self.addEventListener('install', event => {
 
 // Activate the service worker and clean up old caches
 self.addEventListener('activate', event => {
-  const cacheWhitelist = [CACHE_NAME];
+  const cacheWhitelist = [CACHE_NAME, DATA_CACHE_NAME];
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
@@ -35,42 +37,54 @@ self.addEventListener('activate', event => {
   return self.clients.claim();
 });
 
-// Intercept fetch requests to serve from cache or network
 self.addEventListener('fetch', event => {
-  // We only cache GET requests with http/https schemes
+  // Ignore non-GET requests or requests to browser extensions
   if (event.request.method !== 'GET' || !event.request.url.startsWith('http')) {
     return;
   }
 
-  event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        // Cache hit - return response
-        if (response) {
-          return response;
-        }
+  const requestUrl = new URL(event.request.url);
 
-        return fetch(event.request).then(
-          networkResponse => {
-            // Check if we received a valid response
-            if(!networkResponse || networkResponse.status !== 200 || (networkResponse.type !== 'basic' && networkResponse.type !== 'cors')) {
-              return networkResponse;
+  // API requests (to Supabase) use a network-first strategy
+  if (requestUrl.pathname.startsWith('/rest/v1/')) {
+    event.respondWith(
+      caches.open(DATA_CACHE_NAME).then(cache => {
+        return fetch(event.request)
+          .then(networkResponse => {
+            // If we get a valid response, cache it and return it
+            if (networkResponse.ok) {
+              cache.put(event.request, networkResponse.clone());
             }
-
-            // IMPORTANT: Clone the response. A response is a stream
-            // and because we want the browser to consume the response
-            // as well as the cache consuming the response, we need
-            // to clone it so we have two streams.
-            const responseToCache = networkResponse.clone();
-
-            caches.open(CACHE_NAME)
-              .then(cache => {
-                cache.put(event.request, responseToCache);
-              });
-
             return networkResponse;
-          }
-        );
+          })
+          .catch(() => {
+            // If the network fails, try to get the response from the cache
+            return cache.match(event.request);
+          });
       })
     );
+    return;
+  }
+
+  // For all other requests (app shell), use a cache-first strategy
+  event.respondWith(
+    caches.match(event.request)
+      .then(cachedResponse => {
+        // If we have a cached response, return it
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+
+        // Otherwise, fetch from the network
+        return fetch(event.request).then(networkResponse => {
+          // Cache the new response for future use
+          return caches.open(CACHE_NAME).then(cache => {
+            if (networkResponse.ok) {
+                 cache.put(event.request, networkResponse.clone());
+            }
+            return networkResponse;
+          });
+        });
+      })
+  );
 });

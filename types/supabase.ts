@@ -6,7 +6,7 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
-export interface Database {
+export type Database = {
   public: {
     Tables: {
       groups: {
@@ -53,6 +53,7 @@ export interface Database {
           {
             foreignKeyName: "phrases_group_id_fkey"
             columns: ["group_id"]
+            isOneToOne: false
             referencedRelation: "groups"
             referencedColumns: ["id"]
           }
