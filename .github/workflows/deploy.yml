@@ -43,7 +43,7 @@ jobs:
           const supabaseUrl = '${{ secrets.VITE_SUPABASE_URL }}';
           const supabaseAnonKey = '${{ secrets.VITE_SUPABASE_KEY }}';
 
-          supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+          const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
 
           export default supabase
           EOF
