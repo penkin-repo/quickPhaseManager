@@ -2,7 +2,7 @@
   "name": "Quick Phrase Manager",
   "short_name": "QuickPhrases",
   "description": "An application to create, manage, and quickly access reusable phrases and text snippets.",
-  "start_url": ".",
+  "start_url": "/quickPhaseManager/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#111827",
