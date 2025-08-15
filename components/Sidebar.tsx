@@ -44,7 +44,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         <div className="p-4 border-b border-gray-700">
           <h1 className="text-xl font-bold text-white">Quick Phrases</h1>
         </div>
-        <div className="p-4 border-b border-gray-700">
+        <div className="p-4 border-b border-gray-700 hidden md:block">
           <div className="relative">
             <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input

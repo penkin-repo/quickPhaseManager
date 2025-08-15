@@ -5,6 +5,7 @@ import * as phraseService from './services/phraseService';
 import Sidebar from './components/Sidebar';
 import PhraseContent from './components/PhraseContent';
 import Modal from './components/Modal';
+import SearchView from './components/SearchView';
 
 type ModalState = 
   | { type: 'addGroup' }
@@ -19,6 +20,7 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSearchViewOpen, setIsSearchViewOpen] = useState(false);
 
   const [modalState, setModalState] = useState<ModalState | null>(null);
   const [modalGroupName, setModalGroupName] = useState('');
@@ -35,12 +37,7 @@ const App: React.FC = () => {
         }
         setError(null);
       } catch (e) {
-        const err = e as Error;
-        if (err.message.includes('Fetch failed') || err.message.includes('Failed to fetch')) {
-             setError('Failed to connect to the database. Please check your Supabase credentials and network connection.');
-        } else {
-            setError('Failed to load data. ' + err.message);
-        }
+        setError('Failed to load data.');
         console.error(e);
       } finally {
         setIsLoading(false);
@@ -73,7 +70,6 @@ const App: React.FC = () => {
     if (!modalState) return;
 
     try {
-        setError(null);
         switch (modalState.type) {
             case 'addGroup':
                 if (modalGroupName.trim()) {
@@ -107,44 +103,29 @@ const App: React.FC = () => {
         closeModal();
     } catch (err) {
         console.error("Failed to submit modal:", err);
-        const error = err as Error;
-        setError(error.message || "Failed to save changes. Please try again.");
+        // You could set an error state here to show in the UI
     }
   };
 
   const handleDeleteGroup = useCallback(async (groupId: string) => {
     if (window.confirm('Are you sure you want to delete this group and all its phrases?')) {
-      try {
-        setError(null);
-        await phraseService.deleteGroup(groupId);
-        const remainingGroups = groups.filter(g => g.id !== groupId);
-        setGroups(remainingGroups);
-        if (activeGroupId === groupId) {
-          setSearchTerm('');
-          setActiveGroupId(remainingGroups.length > 0 ? remainingGroups[0].id : null);
-        }
-      } catch (err) {
-          console.error("Failed to delete group:", err);
-          const error = err as Error;
-          setError(error.message || "Failed to delete group. Please try again.");
+      await phraseService.deleteGroup(groupId);
+      const remainingGroups = groups.filter(g => g.id !== groupId);
+      setGroups(remainingGroups);
+      if (activeGroupId === groupId) {
+        setSearchTerm('');
+        setActiveGroupId(remainingGroups.length > 0 ? remainingGroups[0].id : null);
       }
     }
   }, [activeGroupId, groups]);
 
   const handleDeletePhrase = useCallback(async (phraseId: string) => {
     if (window.confirm('Are you sure you want to delete this phrase?')) {
-        try {
-            setError(null);
-            await phraseService.deletePhrase(phraseId);
-            setGroups(prev => prev.map(g => ({
-                ...g,
-                phrases: g.phrases.filter(p => p.id !== phraseId)
-            })));
-        } catch(err) {
-            console.error("Failed to delete phrase:", err);
-            const error = err as Error;
-            setError(error.message || "Failed to delete phrase. Please try again.");
-        }
+        await phraseService.deletePhrase(phraseId);
+        setGroups(prev => prev.map(g => ({
+            ...g,
+            phrases: g.phrases.filter(p => p.id !== phraseId)
+        })));
     }
   }, []);
 
@@ -174,12 +155,20 @@ const App: React.FC = () => {
   const handleSelectGroup = (id: string) => {
     setActiveGroupId(id);
     setSearchTerm('');
-    setError(null);
   };
+
+  const handleEditPhraseFromSearch = useCallback((phrase: Phrase) => {
+    setIsSearchViewOpen(false);
+    openModal({ type: 'editPhrase', phrase });
+  }, []);
   
   // --- Render Logic ---
   if (isLoading) {
     return <div className="flex items-center justify-center h-screen"><div className="text-xl">Loading...</div></div>;
+  }
+
+  if (error) {
+    return <div className="flex items-center justify-center h-screen"><div className="text-xl text-red-500">{error}</div></div>;
   }
 
   const getModalTitle = () => {
@@ -193,7 +182,7 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="relative flex h-screen font-sans antialiased bg-gray-900 overflow-hidden">
+    <div className="flex h-screen font-sans antialiased bg-gray-900 overflow-hidden">
       <Sidebar
         groups={groups}
         activeGroupId={activeGroupId}
@@ -202,36 +191,34 @@ const App: React.FC = () => {
         onEditGroup={(id, name) => openModal({ type: 'editGroup', group: { id, name, phrases: [] } })}
         onDeleteGroup={handleDeleteGroup}
         searchTerm={searchTerm}
-        onSearchChange={(term) => { setSearchTerm(term); setError(null); }}
+        onSearchChange={setSearchTerm}
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
       />
-      <main className="flex-1 flex flex-col transition-all duration-300 min-w-0">
-        {error ? (
-             <div className="flex-1 flex items-center justify-center p-4">
-                <div className="text-center bg-red-900/50 border border-red-700 p-6 rounded-lg max-w-md">
-                    <h2 className="text-2xl font-semibold text-red-300">An Error Occurred</h2>
-                    <p className="text-red-400 mt-2">{error}</p>
-                    <button
-                        onClick={() => setError(null)}
-                        className="mt-4 px-4 py-2 rounded-md bg-gray-600 hover:bg-gray-700 transition-colors"
-                    >
-                        Dismiss
-                    </button>
-                </div>
-            </div>
-        ) : (
-            <PhraseContent
-            activeGroup={activeGroup}
-            onAddPhrase={() => activeGroupId && openModal({ type: 'addPhrase', groupId: activeGroupId })}
-            onEditPhrase={(phrase) => openModal({ type: 'editPhrase', phrase })}
-            onDeletePhrase={handleDeletePhrase}
-            onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-            searchResults={searchResults}
-            searchTerm={searchTerm}
-            />
-        )}
+      <main className="flex-1 flex flex-col transition-all duration-300 min-w-0 overflow-auto">
+        <PhraseContent
+          activeGroup={activeGroup}
+          onAddPhrase={() => activeGroupId && openModal({ type: 'addPhrase', groupId: activeGroupId })}
+          onEditPhrase={(phrase) => openModal({ type: 'editPhrase', phrase })}
+          onDeletePhrase={handleDeletePhrase}
+          onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+          onOpenSearchView={() => setIsSearchViewOpen(true)}
+          searchResults={searchResults}
+          searchTerm={searchTerm}
+        />
       </main>
+
+      {isSearchViewOpen && (
+        <SearchView
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          searchResults={searchResults}
+          onClose={() => setIsSearchViewOpen(false)}
+          onEditPhrase={handleEditPhraseFromSearch}
+          onDeletePhrase={handleDeletePhrase}
+        />
+      )}
+
       <Modal isOpen={!!modalState} onClose={closeModal} title={getModalTitle()}>
         <form onSubmit={handleModalSubmit}>
           {modalState?.type.includes('Group') ? (

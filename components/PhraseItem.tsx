@@ -46,7 +46,7 @@ const PhraseItem: React.FC<PhraseItemProps> = ({ phrase, onEdit, onDelete, group
     <div className="bg-gray-800 rounded-lg shadow-lg flex flex-col justify-between h-full group transition-all hover:shadow-primary/20 hover:ring-1 hover:ring-primary/50">
       <div className="p-4 flex-grow">
         <h3 className="font-bold text-white mb-2">{highlightText(phrase.title, searchTerm)}</h3>
-        <p className="text-gray-300 text-sm break-words whitespace-pre-wrap">{highlightText(phrase.text, searchTerm)}</p>
+        <p className="text-gray-300 text-sm break-words whitespace-pre-wrap line-clamp-3">{highlightText(phrase.text, searchTerm)}</p>
       </div>
       {groupName && (
         <div className="px-4 pb-2 text-xs text-gray-500">

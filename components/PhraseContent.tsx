@@ -2,7 +2,7 @@
 import React from 'react';
 import type { Group, Phrase } from '../types';
 import PhraseItem from './PhraseItem';
-import { PlusIcon, MenuIcon } from './icons/Icons';
+import { PlusIcon, MenuIcon, SearchIcon } from './icons/Icons';
 
 type SearchResult = Phrase & { groupName: string; groupId: string };
 
@@ -12,6 +12,7 @@ interface PhraseContentProps {
   onEditPhrase: (phrase: Phrase) => void;
   onDeletePhrase: (id: string) => void;
   onToggleSidebar: () => void;
+  onOpenSearchView: () => void;
   searchResults: SearchResult[];
   searchTerm: string;
 }
@@ -22,13 +23,14 @@ const PhraseContent: React.FC<PhraseContentProps> = ({
     onEditPhrase, 
     onDeletePhrase, 
     onToggleSidebar,
+    onOpenSearchView,
     searchResults,
     searchTerm
 }) => {
 
   const Header = ({ title, showAddButton }: { title: string, showAddButton: boolean }) => (
      <header className="flex items-center justify-between p-4 border-b border-gray-700 bg-gray-800/50 backdrop-blur-sm sticky top-0 z-10">
-        <div className="flex items-center gap-4 min-w-0">
+        <div className="flex items-center gap-4">
             <button
                 onClick={onToggleSidebar}
                 className="p-1 rounded-md text-gray-400 hover:bg-gray-700 hover:text-white transition-colors md:hidden"
@@ -38,15 +40,24 @@ const PhraseContent: React.FC<PhraseContentProps> = ({
             </button>
             <h2 className="text-xl font-semibold text-white truncate">{title}</h2>
         </div>
-        {showAddButton && (
-            <button
-            onClick={onAddPhrase}
-            className="flex-shrink-0 flex items-center justify-center p-2 rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary focus:ring-offset-gray-900 transition-colors md:px-4"
+        <div className="flex items-center space-x-2">
+            {showAddButton && (
+                <button
+                onClick={onAddPhrase}
+                className="flex items-center px-3 sm:px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary focus:ring-offset-gray-900 transition-colors"
+                >
+                <PlusIcon className="h-5 w-5 sm:mr-2" />
+                <span className="hidden sm:inline">Add Phrase</span>
+                </button>
+            )}
+             <button
+                onClick={onOpenSearchView}
+                className="p-2 rounded-md text-gray-300 bg-gray-700/50 hover:bg-gray-700 transition-colors md:hidden"
+                aria-label="Search phrases"
             >
-            <PlusIcon className="h-5 w-5 md:mr-2" />
-            <span className="hidden md:inline">Add Phrase</span>
+                <SearchIcon className="h-5 w-5" />
             </button>
-        )}
+        </div>
       </header>
   );
 
@@ -81,8 +92,8 @@ const PhraseContent: React.FC<PhraseContentProps> = ({
 
   if (!activeGroup) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center text-center text-gray-500 p-4">
-         <div className="absolute top-4 left-4 md:hidden">
+      <div className="flex-1 flex items-center justify-center text-gray-500">
+         <div className="flex items-center gap-4 md:hidden absolute top-4 left-4">
              <button
                 onClick={onToggleSidebar}
                 className="p-1 rounded-md text-gray-400 hover:bg-gray-700 hover:text-white transition-colors"
@@ -91,7 +102,7 @@ const PhraseContent: React.FC<PhraseContentProps> = ({
                 <MenuIcon className="h-6 w-6" />
             </button>
          </div>
-        <div>
+        <div className="text-center">
           <h2 className="text-2xl font-semibold">Welcome to Quick Phrases</h2>
           <p>Select a group from the sidebar to view its phrases, or create a new one.</p>
         </div>
